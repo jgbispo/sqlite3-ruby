@@ -1,6 +1,7 @@
 require 'sqlite3'
 
 $db = SQLite3::Database.new('src/database/database.db')
+$db.execute('PRAGMA foreign_keys = ON;')
 
 # Database control module
 module Database
@@ -9,9 +10,10 @@ module Database
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title VARCHAR(256) NOT NULL,
         desc VARCHAR(256),
+        id_list INTEGER,
         complete INTEGER DEFAULT 0,
-        id_list INTEGER
-      );"
+        CONSTRAINT fk_IdList FOREIGN KEY (id_list) REFERENCES list (id) ON DELETE CASCADE
+     );"
     $db.execute(sql)
   end
 
@@ -41,13 +43,22 @@ module Database
       end
     end.join(', ')
 
-    sql = "UPDATE #{table} SET  #{update}  where id=#{id}"
+    sql = "UPDATE #{table} SET #{update} where id=#{id}"
     $db.execute(sql)
   end
 
   def self.delete(table, args)
     id = args.delete(:id)
     sql = "DELETE FROM #{table} WHERE id=#{id}"
+    puts sql
     $db.execute(sql)
+  end
+
+  def self.select_all(table)
+    $db.execute("SELECT * FROM #{table}")
+  end
+
+  def self.select_item_list(id_list)
+    $db.execute("SELECT l.title, i.id, i.title, i.desc, i.complete as 'done' FROM list l join item i on i.id_list=l.id where l.id=#{id_list}")
   end
 end
